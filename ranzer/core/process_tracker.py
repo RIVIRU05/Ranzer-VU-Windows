@@ -454,6 +454,31 @@ class ProcessBehaviorTracker:
         if self.alert_callback:
             self.alert_callback(event)
 
+    def synthesize_event_for_pid(self, pid: int, reason: str,
+                                  alert_handler=None, alert_callback=None):
+        """
+        Build a ProcessEvent for a PID detected via correlator (not process scan).
+        Routes to the GUI Actions pane and alert log — without this the
+        correlated_pids termination path leaves the Actions pane empty.
+        """
+        if pid in self._alerted_pids:
+            return
+        try:
+            proc = psutil.Process(pid)
+            event = self._build(proc, 0, 0.0, reason, [], 0.0)
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            return
+        self._alerted_pids.add(pid)
+        self._event_history.append(event)
+        logger.warning(
+            f"[PROCESS] Correlated PID {pid} ({event.process_name}) flagged "
+            f"via entropy correlation — reason={reason}"
+        )
+        if alert_callback:
+            alert_callback(event)
+        elif alert_handler:
+            alert_handler.handle_event(event)
+
     def get_recent_events(self, limit: int = 50) -> list:
         return self._event_history[-limit:]
 

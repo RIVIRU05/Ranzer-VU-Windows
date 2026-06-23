@@ -201,6 +201,12 @@ class RanzerEngine:
                 for pid in assessment.correlated_pids:
                     if pid in self.process_tracker._quarantined_pids:
                         continue
+                    # Synthesise a ProcessEvent so the GUI Actions pane shows
+                    # this PID — the correlated_pids path otherwise skips it.
+                    self.process_tracker.synthesize_event_for_pid(
+                        pid, "entropy_correlated_writer",
+                        self.alert_handler, self.process_tracker.alert_callback
+                    )
                     if not self.process_tracker.terminate_process(pid):
                         self.process_tracker.kill_process(pid)
             elif self.config.monitored_dirs:
