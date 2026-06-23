@@ -1,7 +1,7 @@
 @echo off
 :: RANZER — Windows Uninstaller
 :: Must be run as Administrator.
-setlocal
+setlocal EnableDelayedExpansion
 
 net session >nul 2>&1
 if errorlevel 1 (
