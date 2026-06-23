@@ -199,6 +199,8 @@ class RanzerEngine:
         if self.config.enable_auto_terminate and assessment.recommended_action == "TERMINATE":
             if assessment.correlated_pids:
                 for pid in assessment.correlated_pids:
+                    if pid in self.process_tracker._quarantined_pids:
+                        continue
                     if not self.process_tracker.terminate_process(pid):
                         self.process_tracker.kill_process(pid)
             elif self.config.monitored_dirs:
@@ -215,8 +217,12 @@ class RanzerEngine:
                         cb(event)
                     else:
                         self.alert_handler.handle_event(event)
-                    if not self.process_tracker.terminate_process(event.pid):
-                        self.process_tracker.kill_process(event.pid)
+                    # cb() may have already terminated this PID via re-entrant
+                    # _on_assessment — skip if already quarantined to avoid the
+                    # "process not found" error log.
+                    if event.pid not in self.process_tracker._quarantined_pids:
+                        if not self.process_tracker.terminate_process(event.pid):
+                            self.process_tracker.kill_process(event.pid)
 
     def _on_rapid_write_pid(self, pid: int, name: str, rate: int, file_path: str):
         """Called by file watcher when a PID is caught writing files rapidly."""
