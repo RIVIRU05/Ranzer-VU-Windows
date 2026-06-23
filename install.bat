@@ -36,6 +36,9 @@ if errorlevel 1 (
 
 :: ── Step 2: Copy to Program Files ─────────────────────────────────────────────
 echo Step 2/4 - Installing to %INSTALL_DIR%...
+:: Kill any running instance so Windows releases the file locks
+taskkill /F /IM ranzer.exe /T >nul 2>&1
+timeout /t 2 /nobreak >nul
 if exist "%INSTALL_DIR%" (
     icacls "%INSTALL_DIR%" /reset /T /Q >nul 2>&1
     rmdir /s /q "%INSTALL_DIR%"
