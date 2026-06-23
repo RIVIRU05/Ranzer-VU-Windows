@@ -190,8 +190,12 @@ class MainWindow(tk.Toplevel):
         self._show_view(key)
 
     def _tick_clock(self):
+        now = datetime.now()
+        hour = now.hour % 12 or 12
+        ampm = "AM" if now.hour < 12 else "PM"
         self._clock_lbl.configure(
-            text=datetime.now().strftime("%-m/%-d/%Y  %-I:%M:%S %p"))
+            text=f"{now.month}/{now.day}/{now.year}  "
+                 f"{hour}:{now.minute:02d}:{now.second:02d} {ampm}")
         self.after(1000, self._tick_clock)
 
     def update_status(self, text):

@@ -50,8 +50,11 @@ class RanzerEngine:
         self._threads: list = []
         self._stop_event = threading.Event()
 
-        # Resolve log_dir to absolute so logs always land in the same place
-        # regardless of cwd changes (especially when launched from the GUI)
+        # If log_dir is the default "." resolve it relative to user home so the
+        # installed .exe (which starts in C:\Program Files\Ranzer\) doesn't try
+        # to write logs there without permission.
+        if self.config.log_dir == ".":
+            self.config.log_dir = str(Path.home() / "RANZER_logs")
         log_dir = str(Path(self.config.log_dir).resolve())
         self.config.log_dir = log_dir
 
@@ -90,6 +93,7 @@ class RanzerEngine:
             honey_file_engine=self.honey_file_engine,
             recursive=self.config.recursive_watch,
             pid_alert_callback=self._on_rapid_write_pid,
+            quarantined_pids=self.process_tracker._quarantined_pids,
         )
 
     def start(self):
@@ -204,7 +208,13 @@ class RanzerEngine:
                     self.config.monitored_dirs
                 )
                 for event in found:
-                    self.alert_handler.handle_event(event)
+                    # Route through the tracker's callback so the GUI Actions
+                    # pane and alert handler both receive this event.
+                    cb = self.process_tracker.alert_callback
+                    if cb:
+                        cb(event)
+                    else:
+                        self.alert_handler.handle_event(event)
                     if not self.process_tracker.terminate_process(event.pid):
                         self.process_tracker.kill_process(event.pid)
 

@@ -210,23 +210,6 @@ class ActionsView(tk.Frame):
                                 parent=self)
             return
 
-        # Warn if the target process runs at higher privilege than RANZER
-        import os
-        try:
-            target_uid = psutil.Process(ev.pid).uids().effective
-            my_uid     = os.geteuid()
-            if target_uid == 0 and my_uid != 0:
-                messagebox.showerror(
-                    "Permission Denied",
-                    f"'{ev.process_name}' (PID {ev.pid}) is running as root.\n\n"
-                    "RANZER is running as a normal user and cannot terminate "
-                    "root-owned processes.\n\n"
-                    "Run RANZER as root to terminate this process.",
-                    parent=self)
-                return
-        except Exception:
-            pass
-
         if not messagebox.askyesno(
                 "Confirm Terminate",
                 f"Terminate '{ev.process_name}' (PID {ev.pid})?\n\nThis will forcefully end the process.",

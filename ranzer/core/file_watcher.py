@@ -61,10 +61,9 @@ INTERACTIVE_PROCESS_WHITELIST = {
     "msmpeng", "mssense", "securityhealthservice",
     # Cloud sync — legitimately writes a lot
     "onedrive", "dropbox", "googledrivesync", "googledrive",
-    # Development
-    "git", "python", "python3", "pythonw",
     # RANZER itself
     "ranzer",
+    # NOTE: python/python3/git intentionally NOT whitelisted — same as process_tracker.
 }
 
 _INTERACTIVE_PREFIXES = {
@@ -130,7 +129,8 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
     def __init__(self, entropy_monitor, honey_file_engine,
                  max_file_size=10*1024*1024,
                  pid_alert_callback=None,
-                 monitored_dirs=None):
+                 monitored_dirs=None,
+                 quarantined_pids=None):
         if WATCHDOG_AVAILABLE:
             super().__init__()
         self.entropy_monitor = entropy_monitor
@@ -139,6 +139,9 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
         self.pid_alert_callback = pid_alert_callback
         self.monitored_dirs = monitored_dirs or []
         self.events_processed = 0
+        # Shared reference to ProcessBehaviorTracker._quarantined_pids so we
+        # can suppress events from already-terminated processes immediately.
+        self._quarantined_pids: set = quarantined_pids if quarantined_pids is not None else set()
 
         self._write_counts: dict = defaultdict(list)
         self._alerted_pids: set = set()
@@ -250,15 +253,26 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
             pass
 
     def _detect_pid(self, file_path: str):
-        """Best-effort: find which non-whitelisted PID has file_path open."""
-        pids = _get_pid_of_file(file_path)
-        for pid, name in pids:
-            if pid == os.getpid() or pid <= 4:
-                continue
-            if _is_interactive_process(name):
-                continue
-            return pid, name
-        return None, None
+        """
+        Best-effort: identify the writing PID from the wchar rate snapshot.
+        Using the snapshot is O(1) and avoids iterating all processes per file
+        event (which is very slow on Windows via psutil.open_files).
+        """
+        if not self._wchar_rate:
+            return None, None
+        candidates = [
+            (pid, name)
+            for pid, (rate, name) in self._wchar_rate.items()
+            if rate > 10 * 1024  # >10 KB/s — actively writing
+            and pid != os.getpid() and pid > 4
+            and pid not in self._quarantined_pids
+            and not _is_interactive_process(name)
+        ]
+        if not candidates:
+            return None, None
+        # Return the highest write-rate candidate
+        candidates.sort(key=lambda x: self._wchar_rate[x[0]][0], reverse=True)
+        return candidates[0]
 
     def _find_and_report_pid(self, file_path: str, rate: int):
         """Find which PID created this file and fire the callback if suspicious."""
@@ -289,6 +303,8 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
         for pid, name in pids:
             if pid in self._alerted_pids:
                 continue
+            if pid in self._quarantined_pids:
+                continue
             self._alerted_pids.add(pid)
             logger.warning(
                 f"[WATCHER] Suspicious writer: PID {pid} ({name}) | "
@@ -300,7 +316,7 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
 
 class FileSystemWatcher:
     def __init__(self, entropy_monitor, honey_file_engine,
-                 recursive=True, pid_alert_callback=None):
+                 recursive=True, pid_alert_callback=None, quarantined_pids=None):
         if not WATCHDOG_AVAILABLE:
             raise RuntimeError("watchdog not installed. Run: pip install watchdog")
         self.recursive = recursive
@@ -311,6 +327,7 @@ class FileSystemWatcher:
         self._handler = _Handler(
             entropy_monitor, honey_file_engine,
             pid_alert_callback=pid_alert_callback,
+            quarantined_pids=quarantined_pids,
         )
 
     def add_directory(self, directory: str):

@@ -67,12 +67,11 @@ WHITELISTED_PROCESSES = {
     "wuauclt", "usoclient", "musnotification",
     # OneDrive / cloud sync — high write volume but not ransomware
     "onedrive", "dropbox", "googledrivesync", "googledrive",
-    # Package managers
-    "winget", "choco", "pip", "pip3",
-    # Development
-    "git", "python", "python3", "pythonw",
     # RANZER itself
     "ranzer",
+    # NOTE: python/python3/git intentionally NOT whitelisted.
+    # Real ransomware uses these (LotL). The 100KB/s threshold
+    # prevents false positives from normal dev usage.
 }
 
 # Prefixes for system service names — checked after stripping .exe
