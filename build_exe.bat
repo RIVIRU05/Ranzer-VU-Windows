@@ -86,4 +86,5 @@ echo   Run    : build_output\dist\ranzer\ranzer.exe gui
 echo.
 echo   To install system-wide, run:  install.bat
 echo.
+if "%~1"=="nopause" exit /b 0
 pause

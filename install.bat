@@ -26,7 +26,7 @@ set "BUNDLE=%~dp0build_output\dist\ranzer"
 :: ── Step 1: Build the EXE bundle ──────────────────────────────────────────────
 echo Step 1/4 — Building EXE bundle...
 echo.
-call "%~dp0build_exe.bat"
+call "%~dp0build_exe.bat" nopause
 if errorlevel 1 (
     echo ERROR: Build failed.
     pause
