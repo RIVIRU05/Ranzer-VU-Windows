@@ -1,0 +1,10 @@
+build_output/
+__pycache__/
+*.pyc
+*.pyo
+*.spec.bak
+*.egg-info/
+.DS_Store
+logs/
+ranzer_*.deb
+ranzer_export.*
