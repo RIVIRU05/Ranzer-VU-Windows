@@ -207,8 +207,11 @@ class RanzerEngine:
                         pid, "entropy_correlated_writer",
                         self.alert_handler, self.process_tracker.alert_callback
                     )
-                    if not self.process_tracker.terminate_process(pid):
-                        self.process_tracker.kill_process(pid)
+                    # synthesize callback chain may have already terminated the PID
+                    # via re-entrant _on_assessment — skip if quarantined
+                    if pid not in self.process_tracker._quarantined_pids:
+                        if not self.process_tracker.terminate_process(pid):
+                            self.process_tracker.kill_process(pid)
             elif self.config.monitored_dirs:
                 # Entropy pushed threat to CRITICAL but write rate was too low to
                 # identify the PID through normal scanning — do an emergency lookup

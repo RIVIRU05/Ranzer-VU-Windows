@@ -474,10 +474,13 @@ class ProcessBehaviorTracker:
             f"[PROCESS] Correlated PID {pid} ({event.process_name}) flagged "
             f"via entropy correlation — reason={reason}"
         )
-        if alert_callback:
-            alert_callback(event)
-        elif alert_handler:
-            alert_handler.handle_event(event)
+        try:
+            if alert_callback:
+                alert_callback(event)
+            elif alert_handler:
+                alert_handler.handle_event(event)
+        except Exception as e:
+            logger.error(f"synthesize_event_for_pid callback error: {e}")
 
     def get_recent_events(self, limit: int = 50) -> list:
         return self._event_history[-limit:]
