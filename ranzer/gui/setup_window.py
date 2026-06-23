@@ -5,6 +5,9 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from ranzer.gui import theme as T
 
+_TEMP = os.environ.get("TEMP", os.environ.get("TMP", os.path.expanduser("~")))
+_STATE_FILE = os.path.join(_TEMP, "ranzer_state.json")
+
 
 class SetupWindow(tk.Toplevel):
     def __init__(self, root, advanced=False, prefill_dirs=None, on_back=None):
@@ -185,7 +188,7 @@ class SetupWindow(tk.Toplevel):
     def _populate_tree(self):
         home = os.path.expanduser("~")
         self._insert_dir("", home, label=f"~ (Home)  {home}")
-        for d in ["/tmp", "/var/tmp"]:
+        for d in [os.path.expanduser("~/Desktop"), os.path.expanduser("~/Documents")]:
             if os.path.isdir(d):
                 self._insert_dir("", d)
 
@@ -287,7 +290,7 @@ class SetupWindow(tk.Toplevel):
             "log_dir": config.log_dir,   # engine resolves this to absolute on init
         }
         try:
-            with open("/tmp/ranzer_state.json", "w") as f:
+            with open(_STATE_FILE, "w") as f:
                 json.dump(state, f)
         except OSError:
             pass

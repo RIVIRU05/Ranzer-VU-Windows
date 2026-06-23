@@ -229,7 +229,7 @@ class ActionsView(tk.Frame):
 
         if not messagebox.askyesno(
                 "Confirm Terminate",
-                f"Terminate '{ev.process_name}' (PID {ev.pid})?\n\nThis will send SIGTERM.",
+                f"Terminate '{ev.process_name}' (PID {ev.pid})?\n\nThis will forcefully end the process.",
                 parent=self):
             return
 

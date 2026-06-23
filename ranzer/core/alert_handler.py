@@ -186,14 +186,19 @@ class AlertHandler:
         self._max_notified_level = -1
 
     def _send_notify(self, title: str, body: str, urgency: str = "normal"):
-        try:
-            import subprocess
-            subprocess.Popen(
-                ["notify-send", "-u", urgency, "-t", "6000", title, body],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            )
-        except (FileNotFoundError, OSError):
-            pass
+        # Windows: use a non-blocking MessageBox on a background thread so CLI
+        # alerts are visible without freezing the main loop.
+        import threading
+        def _show():
+            try:
+                import ctypes
+                MB_ICONWARNING = 0x30
+                MB_ICONERROR   = 0x10
+                icon = MB_ICONERROR if urgency == "critical" else MB_ICONWARNING
+                ctypes.windll.user32.MessageBoxW(0, body, title, icon)
+            except Exception:
+                print(f"\n[RANZER ALERT] {title}: {body}\n")
+        threading.Thread(target=_show, daemon=True).start()
 
     def _write(self, record: dict):
         try:

@@ -57,8 +57,12 @@ class RanzerEngine:
 
         log_path = setup_logging(level=logging.INFO, log_dir=log_dir)
         logger.info(f"RANZER initialised — log: {log_path}")
-        if os.getuid() == 0:
-            logger.warning("Running as root — display server (Xorg) and system daemons are whitelisted")
+        try:
+            import ctypes
+            if ctypes.windll.shell32.IsUserAnAdmin():
+                logger.warning("Running as Administrator — system processes are whitelisted")
+        except Exception:
+            pass
 
         self.alert_handler = AlertHandler(
             log_file=str(Path(log_dir) / "ranzer_events.log"),

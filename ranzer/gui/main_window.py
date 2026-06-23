@@ -5,6 +5,10 @@ import queue
 import tkinter as tk
 from datetime import datetime
 from ranzer.gui import theme as T
+
+_TEMP = os.environ.get("TEMP", os.environ.get("TMP", os.path.expanduser("~")))
+_STATE_FILE = os.path.join(_TEMP, "ranzer_state.json")
+_PID_FILE   = os.path.join(_TEMP, "ranzer.pid")
 from ranzer.gui.views.home import HomeView
 from ranzer.gui.views.dashboard import DashboardView
 from ranzer.gui.views.alerts import AlertsView
@@ -303,7 +307,7 @@ class MainWindow(tk.Toplevel):
             self.engine.stop()
         self.engine.alert_handler.reset_notification_state()
         self._status_lbl.configure(text="Stopped", fg=T.TEXT_MUTED)
-        for path in ("/tmp/ranzer_state.json", "/tmp/ranzer.pid"):
+        for path in (_STATE_FILE, _PID_FILE):
             try:
                 os.remove(path)
             except FileNotFoundError:
