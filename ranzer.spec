@@ -2,7 +2,23 @@
 # PyInstaller spec for RANZER Windows — one-folder bundle.
 # Run via: build_exe.bat  (do NOT run directly unless you know what you're doing)
 
+import sys
+import os
+import glob
+
 block_cipher = None
+
+# Collect Tcl/Tk library data files.
+# PyInstaller 6.x often fails to auto-bundle these, causing the
+# "Can't find a usable init.tcl" crash at startup.
+_tcl_root   = os.path.join(sys.prefix, "tcl")
+_tcl_dirs   = sorted(glob.glob(os.path.join(_tcl_root, "tcl[0-9]*")))
+_tk_dirs    = sorted(glob.glob(os.path.join(_tcl_root, "tk[0-9]*")))
+_extra_datas = []
+if _tcl_dirs:
+    _extra_datas.append((_tcl_dirs[-1], "_tcl_data"))
+if _tk_dirs:
+    _extra_datas.append((_tk_dirs[-1],  "_tk_data"))
 
 a = Analysis(
     ["ranzer/__main__.py"],
@@ -15,7 +31,7 @@ a = Analysis(
         ("ranzer/gui/logo_30_blue.png",  "."),
         ("ranzer/gui/logo_76.png",       "."),
         ("ranzer/gui/image_header.png",  "."),
-    ],
+    ] + _extra_datas,
     hiddenimports=[
         "tkinter",
         "tkinter.ttk",
@@ -50,7 +66,7 @@ a = Analysis(
         "ranzer.gui.views.actions",
     ],
     hookspath=[],
-    runtime_hooks=[],
+    runtime_hooks=["packaging/windows/rthook_tkinter.py"],
     excludes=["matplotlib", "numpy", "scipy", "pandas", "IPython"],
     cipher=block_cipher,
     noarchive=False,
