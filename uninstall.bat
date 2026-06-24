@@ -15,8 +15,9 @@ set "SHORTCUT=%ProgramData%\Microsoft\Windows\Start Menu\Programs\RANZER.lnk"
 
 echo Removing RANZER...
 
-:: Kill any running instance so Windows releases the file locks
+:: Kill any running instance so Windows releases file locks
 taskkill /F /IM ranzer.exe /T >nul 2>&1
+taskkill /F /IM pythonw.exe /T >nul 2>&1
 timeout /t 2 /nobreak >nul
 
 :: Remove self-protection ACLs first (required before deletion)
