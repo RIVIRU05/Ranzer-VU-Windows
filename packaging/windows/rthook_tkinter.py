@@ -1,16 +1,17 @@
 """
-Runtime hook: tell Tcl/Tk where to find its library files inside the bundle.
-PyInstaller 6.x places bundled data under _internal/ but doesn't always set
-TCL_LIBRARY / TK_LIBRARY, causing the "Can't find a usable init.tcl" crash.
+Runtime hook: set TCL_LIBRARY / TK_LIBRARY to our bundled copies.
+Uses "tcl_lib"/"tk_lib" folder names (NOT "_tcl_data"/"_tk_data") so
+PyInstaller's own _tkinter hook cannot overwrite them.
+Force-assigns rather than setdefault so we always win.
 """
 import sys
 import os
 
-if hasattr(sys, "_MEIPASS"):
-    _mp = sys._MEIPASS
-    _tcl = os.path.join(_mp, "_tcl_data")
-    _tk  = os.path.join(_mp, "_tk_data")
+if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    _mp  = sys._MEIPASS
+    _tcl = os.path.join(_mp, "tcl_lib")
+    _tk  = os.path.join(_mp, "tk_lib")
     if os.path.isdir(_tcl):
-        os.environ.setdefault("TCL_LIBRARY", _tcl)
+        os.environ["TCL_LIBRARY"] = _tcl
     if os.path.isdir(_tk):
-        os.environ.setdefault("TK_LIBRARY", _tk)
+        os.environ["TK_LIBRARY"] = _tk

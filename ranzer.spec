@@ -4,21 +4,33 @@
 
 import sys
 import os
-import glob
 
 block_cipher = None
 
 # Collect Tcl/Tk library data files.
-# PyInstaller 6.x often fails to auto-bundle these, causing the
-# "Can't find a usable init.tcl" crash at startup.
-_tcl_root   = os.path.join(sys.prefix, "tcl")
-_tcl_dirs   = sorted(glob.glob(os.path.join(_tcl_root, "tcl[0-9]*")))
-_tk_dirs    = sorted(glob.glob(os.path.join(_tcl_root, "tk[0-9]*")))
+# Ask Tcl's own interpreter where it lives — this works for any Python
+# version or install location (standard, Microsoft Store, conda, etc.)
+# and any Tcl version (8.6, 9.0, ...).
 _extra_datas = []
-if _tcl_dirs:
-    _extra_datas.append((_tcl_dirs[-1], "_tcl_data"))
-if _tk_dirs:
-    _extra_datas.append((_tk_dirs[-1],  "_tk_data"))
+try:
+    import tkinter as _tk
+    _interp = _tk.Tcl()
+    _tcl_lib = _interp.eval("info library")   # e.g. C:/Python314/tcl/tcl8.6
+    _tk_ver  = "{:.1f}".format(_tk.TkVersion) # e.g. "8.6"
+    _tk_lib  = os.path.normpath(
+        os.path.join(_tcl_lib, "..", "tk" + _tk_ver)
+    )
+    del _interp, _tk
+    # Use "tcl_lib"/"tk_lib" — NOT "_tcl_data"/"_tk_data" (those are owned by
+    # PyInstaller's internal _tkinter hook and get overwritten with empty dirs).
+    if os.path.isdir(_tcl_lib):
+        _extra_datas.append((_tcl_lib, "tcl_lib"))
+        print(f"[spec] Tcl library: {_tcl_lib}")
+    if os.path.isdir(_tk_lib):
+        _extra_datas.append((_tk_lib, "tk_lib"))
+        print(f"[spec]  Tk library: {_tk_lib}")
+except Exception as _e:
+    print(f"[spec] WARNING: Could not locate Tcl/Tk data: {_e}")
 
 a = Analysis(
     ["ranzer/__main__.py"],
