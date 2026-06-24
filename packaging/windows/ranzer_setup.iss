@@ -253,7 +253,7 @@ begin
       NewPath := OldPath;
       StringChangeEx(NewPath, ';' + BinDir, '', True);
       StringChangeEx(NewPath, BinDir + ';', '', True);
-      RegWriteExpandStrValue(
+      RegWriteStringValue(
         HKLM,
         'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
         'Path', NewPath);
