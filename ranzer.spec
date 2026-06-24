@@ -8,29 +8,31 @@ import os
 block_cipher = None
 
 # Collect Tcl/Tk library data files.
-# Ask Tcl's own interpreter where it lives — this works for any Python
-# version or install location (standard, Microsoft Store, conda, etc.)
-# and any Tcl version (8.6, 9.0, ...).
+# Brute-force walk sys.prefix to physically locate init.tcl and tk.tcl —
+# this handles any Python version, install path, or Tcl/Tk version.
 _extra_datas = []
-try:
-    import tkinter as _tk
-    _interp = _tk.Tcl()
-    _tcl_lib = _interp.eval("info library")   # e.g. C:/Python314/tcl/tcl8.6
-    _tk_ver  = "{:.1f}".format(_tk.TkVersion) # e.g. "8.6"
-    _tk_lib  = os.path.normpath(
-        os.path.join(_tcl_lib, "..", "tk" + _tk_ver)
-    )
-    del _interp, _tk
-    # Use "tcl_lib"/"tk_lib" — NOT "_tcl_data"/"_tk_data" (those are owned by
-    # PyInstaller's internal _tkinter hook and get overwritten with empty dirs).
-    if os.path.isdir(_tcl_lib):
-        _extra_datas.append((_tcl_lib, "tcl_lib"))
-        print(f"[spec] Tcl library: {_tcl_lib}")
-    if os.path.isdir(_tk_lib):
-        _extra_datas.append((_tk_lib, "tk_lib"))
-        print(f"[spec]  Tk library: {_tk_lib}")
-except Exception as _e:
-    print(f"[spec] WARNING: Could not locate Tcl/Tk data: {_e}")
+
+def _find_by_file(root, target):
+    """Return the directory that contains `target`, or None."""
+    for dirpath, _dirs, files in os.walk(root):
+        if target in files:
+            return dirpath
+    return None
+
+_tcl_lib = _find_by_file(sys.prefix, "init.tcl")
+_tk_lib  = _find_by_file(sys.prefix, "tk.tcl")
+
+if _tcl_lib:
+    _extra_datas.append((_tcl_lib, "tcl_lib"))
+    print(f"[spec] Tcl library found : {_tcl_lib}")
+else:
+    print("[spec] WARNING: init.tcl not found under sys.prefix — Tcl data will NOT be bundled")
+
+if _tk_lib:
+    _extra_datas.append((_tk_lib, "tk_lib"))
+    print(f"[spec]  Tk library found : {_tk_lib}")
+else:
+    print("[spec] WARNING: tk.tcl not found under sys.prefix — Tk data will NOT be bundled")
 
 a = Analysis(
     ["ranzer/__main__.py"],

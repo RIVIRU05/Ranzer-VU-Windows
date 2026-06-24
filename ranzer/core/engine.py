@@ -197,6 +197,8 @@ class RanzerEngine:
         logger.critical(f"[THREAT] {assessment.threat_level} score={assessment.threat_score:.1f} "
                         f"action={assessment.recommended_action} PIDs={assessment.correlated_pids}")
         if self.config.enable_auto_terminate and assessment.recommended_action == "TERMINATE":
+            quarantined_before = set(self.process_tracker._quarantined_pids)
+
             if assessment.correlated_pids:
                 for pid in assessment.correlated_pids:
                     if pid in self.process_tracker._quarantined_pids:
@@ -233,17 +235,26 @@ class RanzerEngine:
                         if not self.process_tracker.terminate_process(event.pid):
                             self.process_tracker.kill_process(event.pid)
 
+            # Reset correlator after any termination so the next simulator run
+            # starts with a clean threat score instead of inheriting residual
+            # signals from the previous run (which caused the stale-PID problem).
+            if self.process_tracker._quarantined_pids != quarantined_before:
+                self.correlator.reset()
+                logger.info("[ENGINE] Correlator reset after termination — ready for next threat")
+
     def _on_rapid_write_pid(self, pid: int, name: str, rate: int, file_path: str):
         """Called by file watcher when a PID is caught writing files rapidly."""
         from .process_tracker import ProcessEvent
+        write_bps = self.file_watcher.get_pid_write_rate(pid)
         logger.warning(
             f"[ENGINE] Rapid write PID caught: {name} (PID {pid}) | "
-            f"rate={rate} files/5s | file={file_path}"
+            f"rate={rate} files/5s | write={write_bps/1024:.1f} KB/s | file={file_path}"
         )
         event = ProcessEvent(
             pid=pid, process_name=name, exe_path=None,
             event_reason="rapid_file_writes_detected",
             open_file_count=rate, file_access_rate=rate / 5.0,
+            write_bytes_per_sec=write_bps,
             flagged_files=[file_path],
         )
         # Route through process_tracker so the event appears in System Actions

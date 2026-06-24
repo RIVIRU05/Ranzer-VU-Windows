@@ -114,7 +114,8 @@ class ProcessEvent:
     def severity(self) -> str:
         if "honeyfile" in self.event_reason:
             return "CRITICAL"
-        elif self.event_reason == "entropy_correlated_writer":
+        elif self.event_reason in ("entropy_correlated_writer",
+                                   "rapid_file_writes_detected"):
             return "HIGH"
         elif self.write_bytes_per_sec > 500 * 1024:
             return "HIGH"

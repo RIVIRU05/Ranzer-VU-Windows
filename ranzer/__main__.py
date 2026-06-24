@@ -2,16 +2,15 @@ import sys as _sys
 import os as _os
 
 # When running as a PyInstaller bundle, point Tcl/Tk to the bundled script
-# libraries BEFORE anything imports tkinter.  PyInstaller's own _tkinter hook
-# can overwrite TCL_LIBRARY with an empty folder; doing it here (after all
-# hooks) wins the race.
+# libraries BEFORE anything imports tkinter.  Only set if init.tcl/tk.tcl
+# are actually present so we don't redirect Tcl to an empty folder.
 if getattr(_sys, "frozen", False) and hasattr(_sys, "_MEIPASS"):
     _mp = _sys._MEIPASS
     _tcl = _os.path.join(_mp, "tcl_lib")
     _tk  = _os.path.join(_mp, "tk_lib")
-    if _os.path.isdir(_tcl):
+    if _os.path.isfile(_os.path.join(_tcl, "init.tcl")):
         _os.environ["TCL_LIBRARY"] = _tcl
-    if _os.path.isdir(_tk):
+    if _os.path.isfile(_os.path.join(_tk, "tk.tcl")):
         _os.environ["TK_LIBRARY"] = _tk
 
 from ranzer.cli import main

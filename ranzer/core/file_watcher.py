@@ -6,8 +6,11 @@ Key design decisions:
 - on_created only counts toward write rate (actual new files)
 - on_modified only does entropy check (can fire on reads too)
 - Interactive/system processes are whitelisted and never flagged
-- PID detection uses psutil.open_files() (Windows equivalent of /proc/fd scan)
-- Write rate tracking uses psutil.io_counters().write_bytes (Windows equivalent of wchar)
+- PID detection uses a continuous background wchar (io_counters) monitor,
+  analogous to the Linux /proc/[pid]/io wchar approach.  The monitor runs
+  every 0.5s in its own thread so _wchar_rate is always pre-populated —
+  entropy events get a valid process_pid from the very first file event
+  instead of waiting for two reactive snapshots to complete.
 """
 
 import logging
@@ -139,16 +142,21 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
         self.pid_alert_callback = pid_alert_callback
         self.monitored_dirs = monitored_dirs or []
         self.events_processed = 0
-        # Shared reference to ProcessBehaviorTracker._quarantined_pids so we
-        # can suppress events from already-terminated processes immediately.
         self._quarantined_pids: set = quarantined_pids if quarantined_pids is not None else set()
 
         self._write_counts: dict = defaultdict(list)
         self._alerted_pids: set = set()
         self._lock = threading.Lock()
+
+        # wchar rate tracking — protected by _wchar_lock so the background
+        # monitor thread and watchdog event thread don't race.
+        self._wchar_lock = threading.Lock()
         self._wchar_prev: dict = {}   # pid -> (timestamp, write_bytes)
         self._wchar_rate: dict = {}   # pid -> (bytes_per_sec, name)
         self._last_wchar_snap: float = 0.0
+
+        # Background wchar monitor (started/stopped by FileSystemWatcher)
+        self._wchar_stop = threading.Event()
 
     # ------------------------------------------------------------------ #
     # Watchdog event handlers                                              #
@@ -205,7 +213,6 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
             rate = len(self._write_counts[parent])
 
         if rate >= 10 and self.pid_alert_callback:
-            self._snapshot_wchar()
             self._find_and_report_pid(file_path, rate)
 
         try:
@@ -218,18 +225,48 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
         pid, name = self._detect_pid(file_path)
         self.entropy_monitor.analyze_file(file_path, process_pid=pid, process_name=name)
 
-    def _snapshot_wchar(self):
+    # ------------------------------------------------------------------ #
+    # Background wchar monitor — the Windows equivalent of the Linux      #
+    # /proc/[pid]/io wchar approach.  Runs continuously in its own thread #
+    # so _wchar_rate is always populated before file events arrive.       #
+    # ------------------------------------------------------------------ #
+
+    def start_wchar_monitor(self):
+        """Start the background io_counters polling thread."""
+        self._wchar_stop.clear()
+        t = threading.Thread(target=self._wchar_loop, daemon=True, name="ranzer-wchar")
+        t.start()
+
+    def stop_wchar_monitor(self):
+        self._wchar_stop.set()
+
+    def _wchar_loop(self):
+        while not self._wchar_stop.is_set():
+            self._snapshot_wchar(force=True)
+            self._wchar_stop.wait(0.5)
+
+    def _snapshot_wchar(self, force: bool = False):
         """
         Sample write_bytes for all non-interactive processes via psutil.
         Windows equivalent of reading /proc/*/io wchar.
-        Throttled to 2x/s.
+
+        force=True bypasses the 0.5s throttle (used by background thread).
+        force=False (from file events) respects the throttle to avoid
+        scanning all processes on every single file event.
+
+        Dead PIDs are cleaned from the tracking dicts so stale rates from
+        terminated processes never surface as false positives on the next run.
         """
         now = time.time()
-        if now - self._last_wchar_snap < 0.5:
+        if not force and now - self._last_wchar_snap < 0.5:
             return
         self._last_wchar_snap = now
+
         try:
             import psutil
+            alive_pids: set = set()
+            # Gather IO counters outside the lock (psutil calls are slow)
+            updates: list = []
             for proc in psutil.process_iter(["pid", "name"]):
                 try:
                     pid = proc.info["pid"]
@@ -239,30 +276,47 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
                     if _is_interactive_process(name):
                         continue
                     io = proc.io_counters()
-                    write_bytes = io.write_bytes
+                    alive_pids.add(pid)
+                    updates.append((pid, name, io.write_bytes))
+                except (psutil.NoSuchProcess, psutil.AccessDenied,
+                        psutil.ZombieProcess, NotImplementedError):
+                    continue
+
+            # Update rate dicts under lock
+            with self._wchar_lock:
+                for pid, name, write_bytes in updates:
                     if pid in self._wchar_prev:
                         prev_t, prev_w = self._wchar_prev[pid]
                         elapsed = now - prev_t
                         if elapsed > 0:
-                            self._wchar_rate[pid] = ((write_bytes - prev_w) / elapsed, name)
+                            self._wchar_rate[pid] = (
+                                (write_bytes - prev_w) / elapsed, name
+                            )
                     self._wchar_prev[pid] = (now, write_bytes)
-                except (psutil.NoSuchProcess, psutil.AccessDenied,
-                        psutil.ZombieProcess, NotImplementedError):
-                    continue
+
+                # Remove dead PIDs so stale rates don't confuse _detect_pid
+                for dead_pid in list(set(self._wchar_prev) - alive_pids):
+                    self._wchar_prev.pop(dead_pid, None)
+                    self._wchar_rate.pop(dead_pid, None)
+
         except Exception:
             pass
 
     def _detect_pid(self, file_path: str):
         """
         Best-effort: identify the writing PID from the wchar rate snapshot.
-        Using the snapshot is O(1) and avoids iterating all processes per file
-        event (which is very slow on Windows via psutil.open_files).
+        Using the snapshot is O(1) and avoids iterating all processes per
+        file event (which is very slow on Windows via psutil.open_files).
         """
-        if not self._wchar_rate:
+        with self._wchar_lock:
+            rate_snapshot = list(self._wchar_rate.items())
+
+        if not rate_snapshot:
             return None, None
+
         candidates = [
-            (pid, name)
-            for pid, (rate, name) in self._wchar_rate.items()
+            (pid, rate, name)
+            for pid, (rate, name) in rate_snapshot
             if rate > 10 * 1024  # >10 KB/s — actively writing
             and pid != os.getpid() and pid > 4
             and pid not in self._quarantined_pids
@@ -270,9 +324,10 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
         ]
         if not candidates:
             return None, None
-        # Return the highest write-rate candidate
-        candidates.sort(key=lambda x: self._wchar_rate[x[0]][0], reverse=True)
-        return candidates[0]
+
+        # Highest write rate wins
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        return candidates[0][0], candidates[0][2]  # pid, name
 
     def _find_and_report_pid(self, file_path: str, rate: int):
         """Find which PID created this file and fire the callback if suspicious."""
@@ -287,18 +342,21 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
             pids = [(p, n) for p, n, _ in _get_high_write_pids(parent)
                     if p != os.getpid() and p > 4]
 
-        # Method 3: write_bytes rate — catches scripts that close files quickly
-        if not pids and self._wchar_rate:
+        # Method 3: wchar rate — catches scripts that close files quickly.
+        # Always has data now thanks to the background monitor thread.
+        if not pids:
+            with self._wchar_lock:
+                rate_snapshot = list(self._wchar_rate.items())
             HIGH = 50 * 1024  # 50 KB/s sustained
             candidates = [
-                (pid, name)
-                for pid, (r, name) in self._wchar_rate.items()
+                (pid, r, name)
+                for pid, (r, name) in rate_snapshot
                 if r > HIGH and pid != os.getpid() and pid > 4
                 and not _is_interactive_process(name)
             ]
             if candidates:
-                candidates.sort(key=lambda x: self._wchar_rate[x[0]][0], reverse=True)
-                pids = [candidates[0]]
+                candidates.sort(key=lambda x: x[1], reverse=True)
+                pids = [(candidates[0][0], candidates[0][2])]
 
         for pid, name in pids:
             if pid in self._alerted_pids:
@@ -312,6 +370,12 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
             )
             if self.pid_alert_callback:
                 self.pid_alert_callback(pid, name, rate, file_path)
+
+    def get_pid_write_rate(self, pid: int) -> float:
+        """Return the latest write bytes/sec for a PID, or 0.0."""
+        with self._wchar_lock:
+            entry = self._wchar_rate.get(pid)
+        return entry[0] if entry else 0.0
 
 
 class FileSystemWatcher:
@@ -353,16 +417,24 @@ class FileSystemWatcher:
                 self._observer.schedule(self._handler, d, recursive=self.recursive)
                 logger.info(f"[WATCHER] Watching: {d}")
         self._observer.start()
+        # Start background wchar monitor so _wchar_rate is always pre-populated.
+        # This is the Windows equivalent of the Linux /proc/io wchar approach:
+        # proactive process write-rate tracking instead of reactive per-event scans.
+        self._handler.start_wchar_monitor()
         self._running = True
         logger.info("[WATCHER] Started.")
 
     def stop(self):
         if not self._running or not self._observer:
             return
+        self._handler.stop_wchar_monitor()
         self._observer.stop()
         self._observer.join(timeout=5)
         self._running = False
         logger.info("[WATCHER] Stopped.")
+
+    def get_pid_write_rate(self, pid: int) -> float:
+        return self._handler.get_pid_write_rate(pid)
 
     @property
     def is_running(self) -> bool:
