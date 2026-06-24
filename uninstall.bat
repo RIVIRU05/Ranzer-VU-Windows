@@ -27,9 +27,10 @@ icacls "%INSTALL_DIR%" /reset /T /Q >nul 2>&1
 if exist "%INSTALL_DIR%" rmdir /s /q "%INSTALL_DIR%"
 if exist "%SHORTCUT%"    del /f /q "%SHORTCUT%"
 
-:: Remove from PATH
+:: Remove from PATH — handle both old form (\Ranzer;) and new form (\Ranzer\bin;)
 for /f "tokens=2*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path 2^>nul') do set "SYSPATH=%%B"
-set "NEWPATH=!SYSPATH:%INSTALL_DIR%;=!"
+set "NEWPATH=!SYSPATH:%INSTALL_DIR%\bin;=!"
+set "NEWPATH=!NEWPATH:%INSTALL_DIR%;=!"
 setx /M PATH "!NEWPATH!" >nul 2>&1
 
 echo RANZER uninstalled.

@@ -46,14 +46,14 @@ if exist "%INSTALL_DIR%" (
     rmdir /s /q "%INSTALL_DIR%"
 )
 mkdir "%INSTALL_DIR%"
-:: Copy PyInstaller bundle (ranzer.exe + _internal\ — used by CLI via PATH)
+:: Copy PyInstaller bundle (ranzer.exe lives here but is NOT put in PATH)
 xcopy /E /I /Q "%BUNDLE%\*" "%INSTALL_DIR%\" >nul
 if errorlevel 1 (
     echo ERROR: Failed to copy bundle to %INSTALL_DIR%
     pause
     exit /b 1
 )
-:: Copy ranzer Python source package so the pythonw GUI launcher can import it
+:: Copy ranzer Python source package so the real-Python launchers can import it
 xcopy /E /I /Q "%SOURCE%\*" "%INSTALL_DIR%\ranzer\" >nul
 if errorlevel 1 (
     echo ERROR: Failed to copy ranzer source package
@@ -62,13 +62,15 @@ if errorlevel 1 (
 )
 echo       OK
 
-:: ── Step 3: Create pythonw GUI launcher ───────────────────────────────────────
-:: The frozen ranzer.exe has a Tcl/Tk bundling issue that blocks the GUI.
-:: Instead we launch the GUI using the real Python interpreter (pythonw.exe),
-:: which has working Tcl/Tk — same as "ranzer gui" from the command line.
-echo Step 3/4 - Creating GUI launcher...
+:: ── Step 3: Create launchers ───────────────────────────────────────────────────
+:: The frozen ranzer.exe has a Tcl/Tk bundling issue that crashes the GUI.
+:: We route every launch path through the real Python interpreter instead:
+::   Start Menu  -> launch_gui.vbs  -> pythonw.exe (silent, no console)
+::   "ranzer gui" in CMD -> ranzer.cmd -> pythonw.exe (detached, no console)
+::   "ranzer ..." in CMD -> ranzer.cmd -> python.exe  (console output visible)
+echo Step 3/4 - Creating launchers...
 
-:: Find pythonw.exe via a temp script to avoid CMD quote-escaping hell
+:: Find pythonw.exe — use a tiny temp script to avoid CMD quote-escaping hell
 (
     echo import sys, os
     echo d = os.path.dirname(sys.executable^)
@@ -83,10 +85,9 @@ if "!PYTHONW!"=="" (
     pause
     exit /b 1
 )
-echo       Python launcher: !PYTHONW!
+echo       Python launcher : !PYTHONW!
 
-:: Generate launch_gui.vbs — sets PYTHONPATH to install dir so "ranzer"
-:: package is importable, then runs pythonw silently (window style 0)
+:: launch_gui.vbs — Start Menu entry; window style 0 = hidden (no console)
 (
     echo Set WshShell = CreateObject^("WScript.Shell"^)
     echo Set env = WshShell.Environment^("Process"^)
@@ -95,33 +96,39 @@ echo       Python launcher: !PYTHONW!
     echo pyExe = "!PYTHONW!"
     echo WshShell.Run Chr^(34^) ^& pyExe ^& Chr^(34^) ^& " -m ranzer gui", 0, False
 ) > "%INSTALL_DIR%\launch_gui.vbs"
+
+:: ranzer.cmd in bin\ — what the user gets when typing "ranzer" in CMD.
+:: bin\ is added to PATH instead of the root dir so .cmd is found before .exe.
+:: "ranzer gui"  -> pythonw (detached, no console window)
+:: "ranzer ..."  -> python  (console output shows in the terminal)
+mkdir "%INSTALL_DIR%\bin"
+(
+    echo @echo off
+    echo set "PYTHONPATH=%INSTALL_DIR%"
+    echo if /i "%%1"=="gui" ^(
+    echo     start "" "!PYTHONW!" -m ranzer %%*
+    echo ^) else ^(
+    echo     python -m ranzer %%*
+    echo ^)
+) > "%INSTALL_DIR%\bin\ranzer.cmd"
 echo       OK
 
 :: ── Step 4: Start Menu shortcut + PATH ────────────────────────────────────────
 echo Step 4/4 - Creating Start Menu shortcut...
 set "SHORTCUT=%ProgramData%\Microsoft\Windows\Start Menu\Programs\RANZER.lnk"
 
-:: Write shortcut via a temp PowerShell script to avoid CMD quoting issues
-(
-    echo $ws = New-Object -ComObject WScript.Shell
-    echo $s  = $ws.CreateShortcut('!SHORTCUT!')
-    echo $s.TargetPath       = 'C:\Windows\System32\wscript.exe'
-    echo $s.Arguments        = '"!INSTALL_DIR!\launch_gui.vbs"'
-    echo $s.WorkingDirectory = '!INSTALL_DIR!'
-    echo $s.Description      = 'RANZER Ransomware Detection'
-    echo $s.IconLocation     = '!INSTALL_DIR!\ranzer.exe,0'
-    echo $s.Save()
-) > "%TEMP%\ranzer_shortcut.ps1"
-powershell -NoProfile -ExecutionPolicy Bypass -File "%TEMP%\ranzer_shortcut.ps1"
-del "%TEMP%\ranzer_shortcut.ps1" >nul 2>&1
+:: [char]34 = " — build Arguments string without any temp files
+powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('!SHORTCUT!'); $s.TargetPath = 'C:\Windows\System32\wscript.exe'; $s.Arguments = [char]34 + '!INSTALL_DIR!\launch_gui.vbs' + [char]34; $s.WorkingDirectory = '!INSTALL_DIR!'; $s.Description = 'RANZER Ransomware Detection'; $s.IconLocation = '!INSTALL_DIR!\ranzer.exe,0'; $s.Save()"
 echo       OK
 
-:: ── Add ranzer.exe to system PATH for CLI use ─────────────────────────────────
+:: ── Add bin\ to system PATH so ranzer.cmd is found (not ranzer.exe) ─────────
 for /f "tokens=2*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path 2^>nul') do set "SYSPATH=%%B"
-echo !SYSPATH! | findstr /i "%INSTALL_DIR%" >nul
+echo !SYSPATH! | findstr /i "Ranzer\\bin" >nul
 if errorlevel 1 (
-    setx /M PATH "!SYSPATH!;%INSTALL_DIR%" >nul
-    echo       Added %INSTALL_DIR% to system PATH
+    :: Also strip any old-style entry that lacks \bin, then append the new one
+    set "NEWPATH=!SYSPATH:%INSTALL_DIR%;=!"
+    setx /M PATH "!NEWPATH!;%INSTALL_DIR%\bin" >nul
+    echo       Added %INSTALL_DIR%\bin to system PATH
 )
 
 :: ── Done ──────────────────────────────────────────────────────────────────────
@@ -130,8 +137,9 @@ echo  ==========================================
 echo       RANZER installed successfully!
 echo  ==========================================
 echo.
-echo   Launch via Start Menu: search "RANZER"
-echo   Or from command line:  ranzer gui
+echo   Launch via Start Menu  : search "RANZER"
+echo   Launch from command line: ranzer gui
+echo   (Open a new CMD window for PATH to take effect)
 echo.
 echo   Uninstall: right-click uninstall.bat as Administrator
 echo.
