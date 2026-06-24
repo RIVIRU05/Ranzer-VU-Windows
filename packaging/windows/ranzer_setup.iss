@@ -118,6 +118,8 @@ var
   Key, ExePath, Dir: String;
 begin
   Result := False;
+
+  // ── 1. Try standard registry locations (python.org installer) ──────────────
   SetArrayLength(Versions, 8);
   Versions[0] := '3.14'; Versions[1] := '3.13';
   Versions[2] := '3.12'; Versions[3] := '3.11';
@@ -127,22 +129,40 @@ begin
   for i := 0 to GetArrayLength(Versions) - 1 do
   begin
     Key := 'SOFTWARE\Python\PythonCore\' + Versions[i] + '\InstallPath';
-
-    // Try HKLM (installed for all users), then HKCU (user install)
     if RegQueryStringValue(HKLM, Key, 'ExecutablePath', ExePath) or
-       RegQueryStringValue(HKCU, Key, 'ExecutablePath', ExePath) then
+       RegQueryStringValue(HKCU, Key, 'ExecutablePath', ExePath) or
+       RegQueryStringValue(HKLM, Key, '', ExePath) or
+       RegQueryStringValue(HKCU, Key, '', ExePath) then
     begin
-      Dir := ExtractFileDir(ExePath);
-      PythonExe  := AddBackslash(Dir) + 'python.exe';
-      PythonWExe := AddBackslash(Dir) + 'pythonw.exe';
-      if FileExists(PythonExe) then
+      if ExePath <> '' then
       begin
-        if not FileExists(PythonWExe) then
-          PythonWExe := PythonExe;  // fallback to python.exe
-        Result := True;
-        Exit;
+        // Value may be the directory or the exe itself
+        if LowerCase(ExtractFileExt(ExePath)) = '.exe' then
+          Dir := ExtractFileDir(ExePath)
+        else
+          Dir := ExePath;
+        PythonExe  := AddBackslash(Dir) + 'python.exe';
+        PythonWExe := AddBackslash(Dir) + 'pythonw.exe';
+        if FileExists(PythonExe) then
+        begin
+          if not FileExists(PythonWExe) then PythonWExe := PythonExe;
+          Result := True;
+          Exit;
+        end;
       end;
     end;
+  end;
+
+  // ── 2. Fall back to PATH search (handles winget, Store, per-user installs) ─
+  ExePath := FileSearch('python.exe', GetEnv('PATH'));
+  if ExePath <> '' then
+  begin
+    Dir := ExtractFileDir(ExePath);
+    PythonExe  := ExePath;
+    PythonWExe := AddBackslash(Dir) + 'pythonw.exe';
+    if not FileExists(PythonWExe) then PythonWExe := PythonExe;
+    Result := True;
+    Exit;
   end;
 end;
 
