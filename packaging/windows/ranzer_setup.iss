@@ -220,6 +220,8 @@ begin
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
+var
+  ResultCode: Integer;
 begin
   if CurStep = ssPostInstall then
   begin
@@ -230,7 +232,7 @@ begin
     // Install pip packages silently
     Exec(PythonExe,
          '-m pip install --quiet --upgrade watchdog psutil Pillow',
-         '', SW_HIDE, ewWaitUntilTerminated, 0);
+         '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   end;
 end;
 
