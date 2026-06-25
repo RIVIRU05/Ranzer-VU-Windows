@@ -102,6 +102,14 @@ Root: HKLM; \
     ValueData: "{olddata};{app}\bin"; \
     Check: NeedsAddPath(ExpandConstant('{app}\bin'))
 
+[Run]
+; Refresh Windows icon cache so the RANZER icon appears correctly for all users
+Filename: "{sys}\ie4uinit.exe"; Parameters: "-ClearIconCache"; \
+    Flags: runhidden waituntilterminated; \
+    StatusMsg: "Refreshing icon cache..."
+Filename: "{sys}\ie4uinit.exe"; Parameters: "-show"; \
+    Flags: runhidden waituntilterminated
+
 [UninstallDelete]
 ; Clean up generated files not tracked by the installer
 Type: files;       Name: "{app}\launch_gui.vbs"
