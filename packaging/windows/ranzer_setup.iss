@@ -63,6 +63,11 @@ Source: "..\..\ranzer\*"; \
     DestDir: "{app}\ranzer"; \
     Flags: ignoreversion recursesubdirs createallsubdirs
 
+; ── App icon (used directly by shortcuts) ─────────────────────────────────────
+Source: "ranzer.ico"; \
+    DestDir: "{app}"; \
+    Flags: ignoreversion
+
 ; ── Inno Setup will call [Code] to generate launch_gui.vbs + bin\ranzer.cmd ──
 
 [Icons]
@@ -70,7 +75,7 @@ Source: "..\..\ranzer\*"; \
 Name: "{group}\{#AppName}"; \
     Filename: "{sys}\wscript.exe"; \
     Parameters: """{app}\launch_gui.vbs"""; \
-    IconFilename: "{app}\ranzer.exe"; \
+    IconFilename: "{app}\ranzer.ico"; \
     Comment: "{#AppDesc}"
 
 Name: "{group}\{#AppName} (CLI Help)"; \
@@ -85,7 +90,7 @@ Name: "{group}\Uninstall {#AppName}"; \
 Name: "{commondesktop}\{#AppName}"; \
     Filename: "{sys}\wscript.exe"; \
     Parameters: """{app}\launch_gui.vbs"""; \
-    IconFilename: "{app}\ranzer.exe"; \
+    IconFilename: "{app}\ranzer.ico"; \
     Comment: "{#AppDesc}"; \
     Tasks: desktopicon
 
