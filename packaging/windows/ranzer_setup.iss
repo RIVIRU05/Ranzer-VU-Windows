@@ -105,10 +105,10 @@ Root: HKLM; \
 [Run]
 ; Refresh Windows icon cache so the RANZER icon appears correctly for all users
 Filename: "{sys}\ie4uinit.exe"; Parameters: "-ClearIconCache"; \
-    Flags: runhidden waituntilterminated; \
+    Flags: runhidden waituntilterminated skipifdoesntexist; \
     StatusMsg: "Refreshing icon cache..."
 Filename: "{sys}\ie4uinit.exe"; Parameters: "-show"; \
-    Flags: runhidden waituntilterminated
+    Flags: runhidden waituntilterminated skipifdoesntexist
 
 [UninstallDelete]
 ; Clean up generated files not tracked by the installer
