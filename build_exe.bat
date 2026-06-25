@@ -58,15 +58,12 @@ if errorlevel 1 (
 echo       OK
 
 :: ── Step 2: Create icon if none exists ────────────────────────────────────────
-if not exist "packaging\windows\ranzer.ico" (
-    echo [2/4] Generating icon from logo.png...
-    !PYTHON! -c "from PIL import Image; import os; os.makedirs('packaging/windows', exist_ok=True); src = Image.open('ranzer/gui/logo.png').convert('RGBA'); w,h = src.size; pad=int(max(w,h)*0.15); sq=max(w,h)+pad*2; canvas=Image.new('RGBA',(sq,sq),(255,255,255,255)); canvas.paste(src,((sq-w)//2,(sq-h)//2),src); sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)]; imgs=[canvas.resize(s,Image.LANCZOS) for s in sizes]; imgs[0].save('packaging/windows/ranzer.ico',format='ICO',sizes=sizes,append_images=imgs[1:]); print('Icon saved.')" 2>nul
-    if errorlevel 1 (
-        echo       Icon generation skipped - building without icon
-        !PYTHON! -c "import re; spec=open('ranzer.spec').read(); spec=re.sub(r',\s*icon=[^,)]*', '', spec); open('ranzer.spec','w').write(spec)"
-    )
-) else (
-    echo [2/4] Icon already exists - skipping.
+echo [2/4] Generating icon from logo.png...
+del /f /q "packaging\windows\ranzer.ico" 2>nul
+!PYTHON! packaging\windows\make_icon.py
+if errorlevel 1 (
+    echo       Icon generation failed - building without icon
+    !PYTHON! -c "import re; spec=open('ranzer.spec').read(); spec=re.sub(r'icon=.*?,','',spec); open('ranzer.spec','w').write(spec)"
 )
 
 :: ── Step 3: PyInstaller bundle ────────────────────────────────────────────────

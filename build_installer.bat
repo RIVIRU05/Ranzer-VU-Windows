@@ -50,19 +50,6 @@ if errorlevel 1 (
 )
 echo [OK] PyInstaller build done.
 
-:: ── Step 2: Make sure ranzer.ico exists ─────────────────────────────────────
-if not exist "packaging\windows\ranzer.ico" (
-    echo.
-    echo [WARN] packaging\windows\ranzer.ico not found.
-    echo        The installer will use the default Inno Setup icon.
-    echo        To use the RANZER icon, convert ranzer.png to ranzer.ico and place
-    echo        it at packaging\windows\ranzer.ico before running this script.
-    echo.
-    :: Patch the .iss to remove the SetupIconFile line so it doesn't error
-    powershell -NoProfile -Command ^
-        "(Get-Content 'packaging\windows\ranzer_setup.iss') -replace 'SetupIconFile=.*', '' | Set-Content 'packaging\windows\ranzer_setup.iss'"
-)
-
 :: ── Step 3: Compile installer ────────────────────────────────────────────────
 echo.
 echo [2/3] Compiling Inno Setup installer...
