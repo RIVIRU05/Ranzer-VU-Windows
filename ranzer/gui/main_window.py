@@ -1,4 +1,4 @@
-"""RANZER GUI — Main Window"""
+"""RANZER GUI - Main Window"""
 
 import os
 import queue
@@ -220,16 +220,16 @@ class MainWindow(tk.Toplevel):
     def _show_threat_popup(self, severity: str, message: str):
         """Non-blocking threat escalation popup."""
         if severity == "MEDIUM":
-            # For MEDIUM just flash the status bar — no intrusive popup
+            # For MEDIUM just flash the status bar - no intrusive popup
             self._status_lbl.configure(
-                text="⚠  Medium threat detected — check Alerts panel",
+                text="⚠  Medium threat detected - check Alerts panel",
                 fg=T.SEV_MEDIUM)
             return
 
         is_critical = severity == "CRITICAL"
         bg_color  = "#EF4444" if is_critical else "#F97316"
         body_bg   = "#FEF2F2" if is_critical else "#FFF7ED"
-        title_txt = "CRITICAL — TAKE IMMEDIATE ACTION" if is_critical else "HIGH THREAT DETECTED"
+        title_txt = "CRITICAL - TAKE IMMEDIATE ACTION" if is_critical else "HIGH THREAT DETECTED"
         icon_txt  = "🚨" if is_critical else "⚠"
 
         pop = tk.Toplevel(self)

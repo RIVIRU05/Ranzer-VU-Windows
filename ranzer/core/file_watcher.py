@@ -8,7 +8,7 @@ Key design decisions:
 - Interactive/system processes are whitelisted and never flagged
 - PID detection uses a continuous background wchar (io_counters) monitor,
   analogous to the Linux /proc/[pid]/io wchar approach.  The monitor runs
-  every 0.5s in its own thread so _wchar_rate is always pre-populated —
+  every 0.5s in its own thread so _wchar_rate is always pre-populated -
   entropy events get a valid process_pid from the very first file event
   instead of waiting for two reactive snapshots to complete.
 """
@@ -40,7 +40,7 @@ def _norm(name: str) -> str:
     return name.lower().removesuffix(".exe")
 
 
-# Processes that are always user-interactive — never flag these
+# Processes that are always user-interactive - never flag these
 INTERACTIVE_PROCESS_WHITELIST = {
     # Shell / file manager
     "explorer", "cmd", "powershell", "pwsh", "wt", "conhost", "windowsterminal",
@@ -52,7 +52,7 @@ INTERACTIVE_PROCESS_WHITELIST = {
     "chrome", "firefox", "msedge", "iexplore", "brave", "opera",
     # Document / media viewers
     "acrord32", "acrobat", "foxitreader", "vlc", "wmplayer", "photos", "mspaint",
-    # System processes — killing these would brick Windows
+    # System processes - killing these would brick Windows
     "system", "smss", "csrss", "wininit", "winlogon",
     "services", "lsass", "lsm", "svchost", "dwm",
     "taskhostw", "taskmgr", "spoolsv", "searchindexer",
@@ -62,11 +62,11 @@ INTERACTIVE_PROCESS_WHITELIST = {
     "fontdrvhost", "audiodg",
     # Security
     "msmpeng", "mssense", "securityhealthservice",
-    # Cloud sync — legitimately writes a lot
+    # Cloud sync - legitimately writes a lot
     "onedrive", "dropbox", "googledrivesync", "googledrive",
     # RANZER itself
     "ranzer",
-    # NOTE: python/python3/git intentionally NOT whitelisted — same as process_tracker.
+    # NOTE: python/python3/git intentionally NOT whitelisted - same as process_tracker.
 }
 
 _INTERACTIVE_PREFIXES = {
@@ -148,7 +148,7 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
         self._alerted_pids: set = set()
         self._lock = threading.Lock()
 
-        # wchar rate tracking — protected by _wchar_lock so the background
+        # wchar rate tracking - protected by _wchar_lock so the background
         # monitor thread and watchdog event thread don't race.
         self._wchar_lock = threading.Lock()
         self._wchar_prev: dict = {}   # pid -> (timestamp, write_bytes)
@@ -226,7 +226,7 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
         self.entropy_monitor.analyze_file(file_path, process_pid=pid, process_name=name)
 
     # ------------------------------------------------------------------ #
-    # Background wchar monitor — the Windows equivalent of the Linux      #
+    # Background wchar monitor - the Windows equivalent of the Linux      #
     # /proc/[pid]/io wchar approach.  Runs continuously in its own thread #
     # so _wchar_rate is always populated before file events arrive.       #
     # ------------------------------------------------------------------ #
@@ -317,7 +317,7 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
         candidates = [
             (pid, rate, name)
             for pid, (rate, name) in rate_snapshot
-            if rate > 10 * 1024  # >10 KB/s — actively writing
+            if rate > 10 * 1024  # >10 KB/s - actively writing
             and pid != os.getpid() and pid > 4
             and pid not in self._quarantined_pids
             and not _is_interactive_process(name)
@@ -336,13 +336,13 @@ class _Handler(FileSystemEventHandler if WATCHDOG_AVAILABLE else object):
         pids = [(pid, name) for pid, name in pids
                 if not _is_interactive_process(name) and pid != os.getpid() and pid > 4]
 
-        # Method 2: psutil fallback — find processes with many files open in parent dir
+        # Method 2: psutil fallback - find processes with many files open in parent dir
         if not pids:
             parent = str(Path(file_path).parent)
             pids = [(p, n) for p, n, _ in _get_high_write_pids(parent)
                     if p != os.getpid() and p > 4]
 
-        # Method 3: wchar rate — catches scripts that close files quickly.
+        # Method 3: wchar rate - catches scripts that close files quickly.
         # Always has data now thanks to the background monitor thread.
         if not pids:
             with self._wchar_lock:

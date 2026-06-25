@@ -1,4 +1,4 @@
-"""RANZER GUI — Alerts View"""
+"""RANZER GUI - Alerts View"""
 
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox

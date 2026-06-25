@@ -3,10 +3,10 @@
 RANZER - Ransomware Simulator (for testing ONLY)
 Simulates realistic ransomware behavior across four phases:
 
-  Phase 1 — Encrypt existing files in-place  (triggers on_modified + honey files)
-  Phase 2 — Rename encrypted files to .enc   (triggers on_moved  + honey files)
-  Phase 3 — Drop ransom note                 (triggers on_created)
-  Phase 4 — Create new high-entropy files    (triggers on_created + write rate)
+  Phase 1 - Encrypt existing files in-place  (triggers on_modified + honey files)
+  Phase 2 - Rename encrypted files to .enc   (triggers on_moved  + honey files)
+  Phase 3 - Drop ransom note                 (triggers on_created)
+  Phase 4 - Create new high-entropy files    (triggers on_created + write rate)
 
 This exercises every RANZER detection path: entropy, honey file engine,
 rapid write rate, and process tracking.
@@ -33,7 +33,7 @@ def _write_random(path: str, size_kb: int):
     with open(path, "wb") as f:
         f.write(os.urandom(size_kb * 1024))
         f.flush()
-        time.sleep(0.05)   # hold handle open — helps /proc/fd / psutil detection
+        time.sleep(0.05)   # hold handle open - helps /proc/fd / psutil detection
 
 
 def _print(msg: str):
@@ -44,7 +44,7 @@ def _print(msg: str):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="RANZER ransomware simulator — safe test only"
+        description="RANZER ransomware simulator - safe test only"
     )
     parser.add_argument("--dir",      required=True,              help="Target directory")
     parser.add_argument("--files",    type=int,   default=50,     help="New files to create in Phase 4 (default 50)")
@@ -78,7 +78,7 @@ def main():
         ])
 
         if existing:
-            _print(f"Phase 1 — Encrypting {len(existing)} existing file(s) in-place ...")
+            _print(f"Phase 1 - Encrypting {len(existing)} existing file(s) in-place ...")
             for fname in existing:
                 fpath = os.path.join(target_dir, fname)
                 try:
@@ -90,13 +90,13 @@ def main():
                     return
                 time.sleep(args.delay)
         else:
-            _print("Phase 1 — No existing files to encrypt (skipping)")
+            _print("Phase 1 - No existing files to encrypt (skipping)")
 
         _print("")
 
         # ── Phase 2: Rename encrypted files ──────────────────────────────────
-        # Adds .enc extension — triggers on_moved; also fires honey file renamed event.
-        _print("Phase 2 — Renaming encrypted files to .enc ...")
+        # Adds .enc extension - triggers on_moved; also fires honey file renamed event.
+        _print("Phase 2 - Renaming encrypted files to .enc ...")
         for fname in existing:
             src = os.path.join(target_dir, fname)
             dst = src + ".enc"
@@ -111,7 +111,7 @@ def main():
         _print("")
 
         # ── Phase 3: Drop ransom note ─────────────────────────────────────────
-        # Creates a text file — triggers on_created (low entropy, but creates event).
+        # Creates a text file - triggers on_created (low entropy, but creates event).
         note_path = os.path.join(target_dir, "README_DECRYPT.txt")
         try:
             with open(note_path, "w") as f:
@@ -120,15 +120,15 @@ def main():
                     "To recover your files, send 1 BTC to...\n\n"
                     "--- RANZER SIMULATOR: THIS IS A SAFE TEST ---\n"
                 )
-            _print("Phase 3 — Ransom note dropped: README_DECRYPT.txt")
+            _print("Phase 3 - Ransom note dropped: README_DECRYPT.txt")
         except Exception as e:
-            _print(f"Phase 3 — Note dropped failed: {e}")
+            _print(f"Phase 3 - Note dropped failed: {e}")
 
         _print("")
 
     # ── Phase 4: Create new high-entropy files ────────────────────────────────
-    # Same as the original simulator — triggers rapid write rate + entropy detection.
-    _print(f"Phase 4 — Creating {args.files} new encrypted file(s) ...")
+    # Same as the original simulator - triggers rapid write rate + entropy detection.
+    _print(f"Phase 4 - Creating {args.files} new encrypted file(s) ...")
     written = 0
     for i in range(1, args.files + 1):
         fpath = os.path.join(target_dir, f"encrypted_{i:04d}.enc")
@@ -143,7 +143,7 @@ def main():
         time.sleep(args.delay)
 
     _print("")
-    _print(f"Completed — {written} new files written without being terminated.")
+    _print(f"Completed - {written} new files written without being terminated.")
     _print("Ensure --auto-terminate is enabled and a directory is being monitored.")
 
 

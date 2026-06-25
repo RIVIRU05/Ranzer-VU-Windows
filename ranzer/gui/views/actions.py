@@ -1,4 +1,4 @@
-"""RANZER GUI — System Actions View"""
+"""RANZER GUI - System Actions View"""
 
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -271,7 +271,7 @@ class ActionsView(tk.Frame):
             lines.append("\nFlagged Files:")
             for f in ev.flagged_files[:8]:
                 lines.append(f"  {f}")
-        messagebox.showinfo(f"Process Detail — PID {ev.pid}",
+        messagebox.showinfo(f"Process Detail - PID {ev.pid}",
                             "\n".join(lines), parent=self)
 
     def _on_double_click(self, event):

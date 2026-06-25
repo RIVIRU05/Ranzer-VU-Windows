@@ -70,7 +70,7 @@ echo       OK
 ::   "ranzer ..." in CMD -> ranzer.cmd -> python.exe  (console output visible)
 echo Step 3/4 - Creating launchers...
 
-:: Find pythonw.exe — use a tiny temp script to avoid CMD quote-escaping hell
+:: Find pythonw.exe - use a tiny temp script to avoid CMD quote-escaping hell
 (
     echo import sys, os
     echo d = os.path.dirname(sys.executable^)
@@ -87,7 +87,7 @@ if "!PYTHONW!"=="" (
 )
 echo       Python launcher : !PYTHONW!
 
-:: launch_gui.vbs — Start Menu entry; window style 0 = hidden (no console)
+:: launch_gui.vbs - Start Menu entry; window style 0 = hidden (no console)
 (
     echo Set WshShell = CreateObject^("WScript.Shell"^)
     echo Set env = WshShell.Environment^("Process"^)
@@ -97,7 +97,7 @@ echo       Python launcher : !PYTHONW!
     echo WshShell.Run Chr^(34^) ^& pyExe ^& Chr^(34^) ^& " -m ranzer gui", 0, False
 ) > "%INSTALL_DIR%\launch_gui.vbs"
 
-:: ranzer.cmd in bin\ — what the user gets when typing "ranzer" in CMD.
+:: ranzer.cmd in bin\ - what the user gets when typing "ranzer" in CMD.
 :: bin\ is added to PATH instead of the root dir so .cmd is found before .exe.
 :: "ranzer gui"  -> pythonw (detached, no console window)
 :: "ranzer ..."  -> python  (console output shows in the terminal)
@@ -117,7 +117,7 @@ echo       OK
 echo Step 4/4 - Creating Start Menu shortcut...
 set "SHORTCUT=%ProgramData%\Microsoft\Windows\Start Menu\Programs\RANZER.lnk"
 
-:: [char]34 = " — build Arguments string without any temp files
+:: [char]34 = " - build Arguments string without any temp files
 powershell -NoProfile -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('!SHORTCUT!'); $s.TargetPath = 'C:\Windows\System32\wscript.exe'; $s.Arguments = [char]34 + '!INSTALL_DIR!\launch_gui.vbs' + [char]34; $s.WorkingDirectory = '!INSTALL_DIR!'; $s.Description = 'RANZER Ransomware Detection'; $s.IconLocation = '!INSTALL_DIR!\ranzer.exe,0'; $s.Save()"
 echo       OK
 

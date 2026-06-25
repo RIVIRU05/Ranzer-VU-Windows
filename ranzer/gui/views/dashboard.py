@@ -1,4 +1,4 @@
-"""RANZER GUI — Dashboard View"""
+"""RANZER GUI - Dashboard View"""
 
 import tkinter as tk
 from tkinter import ttk

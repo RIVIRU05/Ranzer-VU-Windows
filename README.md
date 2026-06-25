@@ -1,8 +1,8 @@
-# RANZER — Ransomware Analyzer & Endpoint Protection System (Windows)
+# RANZER - Ransomware Analyzer & Endpoint Protection System (Windows)
 
 > Capstone Project | Group C | Victoria University
 
-RANZER is a lightweight, real-time, signature-free **Endpoint Protection System (EPS)** that detects ransomware by monitoring the **act of encryption** — not known malware signatures. It combines Shannon entropy analysis, honey file deception, and process behaviour tracking into a unified hybrid detection engine.
+RANZER is a lightweight, real-time, signature-free **Endpoint Protection System (EPS)** that detects ransomware by monitoring the **act of encryption** - not known malware signatures. It combines Shannon entropy analysis, honey file deception, and process behaviour tracking into a unified hybrid detection engine.
 
 This is the **Windows port**. For the Linux version see the [Ranzer repository](https://github.com/RIVIRU05/Ranzer).
 
@@ -24,7 +24,7 @@ Entropy Monitor         Honey File Engine
     └──────────┬──────────────┘
                ▼
       Process Behaviour Tracker
-      (psutil.io_counters — who did this?)
+      (psutil.io_counters - who did this?)
                ▼
       Threat Correlator
       (decay-weighted multi-signal scoring)
@@ -86,7 +86,7 @@ Ranzer-Windows/
 ## Requirements
 
 - **OS:** Windows 10 / 11 (64-bit)
-- **Python:** 3.10+ — download from [python.org](https://www.python.org/downloads/)
+- **Python:** 3.10+ - download from [python.org](https://www.python.org/downloads/)
 - **Dependencies:** `watchdog`, `psutil`, `Pillow` (installed automatically)
 - **Admin rights:** Required for install only (not for running from source)
 
@@ -94,7 +94,7 @@ Ranzer-Windows/
 
 ## Installation
 
-### Option A — Install system-wide (recommended)
+### Option A - Install system-wide (recommended)
 
 ```
 git clone https://github.com/RIVIRU05/Ranzer-Windows.git
@@ -117,7 +117,7 @@ Right-click `uninstall.bat` → **Run as administrator**
 
 ---
 
-### Option B — Run from source (development)
+### Option B - Run from source (development)
 
 ```bat
 git clone https://github.com/RIVIRU05/Ranzer-Windows.git
@@ -179,9 +179,9 @@ ranzer export --format txt  --output alerts.txt
 When installed via `install.bat`, RANZER applies **Windows ACL restrictions** to `C:\Program Files\Ranzer\`:
 
 ```
-SYSTEM        — Full Control
-Administrators — Full Control
-Everyone      — Deny: Delete, Write DAC, Write Owner
+SYSTEM        - Full Control
+Administrators - Full Control
+Everyone      - Deny: Delete, Write DAC, Write Owner
 ```
 
 This means:
@@ -201,8 +201,8 @@ This means:
 | **System Actions** | Detected malicious processes with live CPU/status and manual terminate |
 
 Threat popups appear automatically:
-- **HIGH** — bottom-right corner notification, auto-dismisses after 12 s
-- **CRITICAL** — centred modal, requires manual dismissal
+- **HIGH** - bottom-right corner notification, auto-dismisses after 12 s
+- **CRITICAL** - centred modal, requires manual dismissal
 
 ---
 
@@ -242,8 +242,8 @@ Routes all events to:
 
 | File | Contents |
 |---|---|
-| `logs\ranzer_YYYY-MM-DD.log` | Full engine log — startup, scans, debug |
-| `logs\ranzer_events_YYYY-MM-DD.log` | Detection events — one JSON object per line |
+| `logs\ranzer_YYYY-MM-DD.log` | Full engine log - startup, scans, debug |
+| `logs\ranzer_events_YYYY-MM-DD.log` | Detection events - one JSON object per line |
 | `.ranzer_honey_state.json` | Honey file registry (auto-created on start) |
 
 ```bat
@@ -261,7 +261,7 @@ python -c "import json,sys; [print(json.dumps(json.loads(l),indent=2)) for l in 
 > Never test with real ransomware outside an isolated VM.
 
 ```bat
-:: Trigger entropy detection — writes a random (high-entropy) file
+:: Trigger entropy detection - writes a random (high-entropy) file
 python simulate_ransomware.py
 
 :: Trigger low-risk / write-rate detection only
@@ -310,7 +310,7 @@ ranzer scan --file C:\path\to\file.bin
 
 | Name | Student ID |
 |---|---|
-| V.A. Riviru Eren — Project Lead | s8170544 |
+| V.A. Riviru Eren - Project Lead | s8170544 |
 | P.H. Movindi Amasha | s8170573 |
 | M.N.R. Marasingha | s8170623 |
 | R.M.T.D. Moragolla | s8170624 |

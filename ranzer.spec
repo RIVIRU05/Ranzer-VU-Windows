@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec for RANZER Windows — one-folder bundle.
+# PyInstaller spec for RANZER Windows - one-folder bundle.
 # Run via: build_exe.bat  (do NOT run directly unless you know what you're doing)
 
 import sys
@@ -8,7 +8,7 @@ import os
 block_cipher = None
 
 # Collect Tcl/Tk library data files.
-# Brute-force walk sys.prefix to physically locate init.tcl and tk.tcl —
+# Brute-force walk sys.prefix to physically locate init.tcl and tk.tcl -
 # this handles any Python version, install path, or Tcl/Tk version.
 _extra_datas = []
 
@@ -26,13 +26,13 @@ if _tcl_lib:
     _extra_datas.append((_tcl_lib, "tcl_lib"))
     print(f"[spec] Tcl library found : {_tcl_lib}")
 else:
-    print("[spec] WARNING: init.tcl not found under sys.prefix — Tcl data will NOT be bundled")
+    print("[spec] WARNING: init.tcl not found under sys.prefix - Tcl data will NOT be bundled")
 
 if _tk_lib:
     _extra_datas.append((_tk_lib, "tk_lib"))
     print(f"[spec]  Tk library found : {_tk_lib}")
 else:
-    print("[spec] WARNING: tk.tcl not found under sys.prefix — Tk data will NOT be bundled")
+    print("[spec] WARNING: tk.tcl not found under sys.prefix - Tk data will NOT be bundled")
 
 a = Analysis(
     ["ranzer/__main__.py"],

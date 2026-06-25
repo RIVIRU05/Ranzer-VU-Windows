@@ -1,4 +1,4 @@
-"""RANZER GUI — Setup Window"""
+"""RANZER GUI - Setup Window"""
 
 import os
 import tkinter as tk

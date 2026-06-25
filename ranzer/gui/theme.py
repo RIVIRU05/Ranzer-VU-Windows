@@ -1,4 +1,4 @@
-"""Shared design tokens for the RANZER GUI — polished light theme."""
+"""Shared design tokens for the RANZER GUI - polished light theme."""
 
 import os
 
@@ -69,7 +69,7 @@ def load_logo(width: int = 64, height: int = 64, bg: str = WHITE):
     if key in _logo_cache:
         return _logo_cache[key]
 
-    # Try PIL first — best quality with transparency compositing
+    # Try PIL first - best quality with transparency compositing
     try:
         from PIL import Image, ImageTk
         img = Image.open(_LOGO_PNG).convert("RGBA")
@@ -84,7 +84,7 @@ def load_logo(width: int = 64, height: int = 64, bg: str = WHITE):
         import sys as _s
         print(f"[RANZER] PIL logo load failed: {_e} | path={_LOGO_PNG}", file=_s.stderr)
 
-    # Fallback — load pre-sized PNG (no PIL, no scaling, stays sharp)
+    # Fallback - load pre-sized PNG (no PIL, no scaling, stays sharp)
     try:
         import tkinter as _tk
         if width <= 30 and bg == BLUE:

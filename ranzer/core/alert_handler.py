@@ -135,11 +135,11 @@ class AlertHandler:
 
     def _describe(self, event) -> str:
         if isinstance(event, EntropyEvent):
-            return f"Entropy anomaly in {Path(event.file_path).name} — possible encryption (entropy={event.entropy:.2f})"
+            return f"Entropy anomaly in {Path(event.file_path).name} - possible encryption (entropy={event.entropy:.2f})"
         elif isinstance(event, HoneyFileEvent):
-            return f"Honey file {event.event_type}: {Path(event.file_path).name} — potential ransomware activity"
+            return f"Honey file {event.event_type}: {Path(event.file_path).name} - potential ransomware activity"
         elif isinstance(event, ProcessEvent):
-            return f"Suspicious process: {event.process_name} (PID {event.pid}) — {event.event_reason.replace('_', ' ')}"
+            return f"Suspicious process: {event.process_name} (PID {event.pid}) - {event.event_reason.replace('_', ' ')}"
         return "Unknown detection event"
 
     def _enqueue(self, record: dict):
@@ -154,7 +154,7 @@ class AlertHandler:
         LOW alerts are never notified.
 
         NOTE: notify-send is gated on enable_desktop_alerts, but escalation_callback
-        (GUI popup) always fires regardless — the GUI disables notify-send on launch
+        (GUI popup) always fires regardless - the GUI disables notify-send on launch
         but still needs its own popups.
         """
         sev   = record.get("severity", "LOW").upper()
@@ -166,9 +166,9 @@ class AlertHandler:
         self._max_notified_level = level
 
         _messages = {
-            "MEDIUM":   ("RANZER — Medium Threat",    "Suspicious activity detected. Take action."),
-            "HIGH":     ("RANZER — HIGH THREAT",      "High-risk activity detected. Immediate action required."),
-            "CRITICAL": ("RANZER — CRITICAL THREAT",  "TAKE IMMEDIATE ACTION. Possible active ransomware."),
+            "MEDIUM":   ("RANZER - Medium Threat",    "Suspicious activity detected. Take action."),
+            "HIGH":     ("RANZER - HIGH THREAT",      "High-risk activity detected. Immediate action required."),
+            "CRITICAL": ("RANZER - CRITICAL THREAT",  "TAKE IMMEDIATE ACTION. Possible active ransomware."),
         }
         title, body = _messages.get(sev, (f"RANZER [{sev}]", record.get("description", "")))
         urgency = "critical" if sev in ("CRITICAL", "HIGH") else "normal"
@@ -182,7 +182,7 @@ class AlertHandler:
             self.escalation_callback(sev, body)
 
     def reset_notification_state(self):
-        """Reset escalation tracking — call when a monitoring session starts."""
+        """Reset escalation tracking - call when a monitoring session starts."""
         self._max_notified_level = -1
 
     def _send_notify(self, title: str, body: str, urgency: str = "normal"):
@@ -230,7 +230,7 @@ class AlertHandler:
 def setup_logging(level: int = logging.INFO, log_dir: str = ".") -> str:
     """
     Sets up logging with dated log files inside a logs/ subfolder.
-    e.g. logs/ranzer_2026-04-25.log — appends, never overwrites.
+    e.g. logs/ranzer_2026-04-25.log - appends, never overwrites.
     """
     logs_dir = Path(log_dir) / "logs"
     logs_dir.mkdir(parents=True, exist_ok=True)

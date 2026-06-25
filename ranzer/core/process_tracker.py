@@ -31,7 +31,7 @@ def _norm(name: str) -> str:
 
 
 # ------------------------------------------------------------------ #
-# Whitelist — these processes are NEVER flagged in normal scanning    #
+# Whitelist - these processes are NEVER flagged in normal scanning    #
 # ------------------------------------------------------------------ #
 WHITELISTED_PROCESSES = {
     # Windows shell and file managers
@@ -49,7 +49,7 @@ WHITELISTED_PROCESSES = {
     # Document viewers / media
     "acrord32", "acrobat", "foxitreader", "vlc", "wmplayer",
     "photos", "mspaint", "paint",
-    # System processes — NEVER terminate these
+    # System processes - NEVER terminate these
     "system", "smss", "csrss", "wininit", "winlogon",
     "services", "lsass", "lsm", "svchost", "dwm",
     "taskhost", "taskhostw", "taskmgr",
@@ -65,7 +65,7 @@ WHITELISTED_PROCESSES = {
     "securityhealthsystray",
     # Windows Update services
     "wuauclt", "usoclient", "musnotification",
-    # OneDrive / cloud sync — high write volume but not ransomware
+    # OneDrive / cloud sync - high write volume but not ransomware
     "onedrive", "dropbox", "googledrivesync", "googledrive",
     # RANZER itself
     "ranzer",
@@ -74,7 +74,7 @@ WHITELISTED_PROCESSES = {
     # prevents false positives from normal dev usage.
 }
 
-# Prefixes for system service names — checked after stripping .exe
+# Prefixes for system service names - checked after stripping .exe
 WHITELISTED_PREFIXES = {
     "svchost",
     "wmi",
@@ -85,7 +85,7 @@ WHITELISTED_PREFIXES = {
     "onedrive",
 }
 
-# Live-off-the-land tools — whitelisted in normal scan but catchable
+# Live-off-the-land tools - whitelisted in normal scan but catchable
 # when entropy is already CRITICAL
 LOTL_TOOLS = {
     "openssl", "gpg", "gpg2",
@@ -459,7 +459,7 @@ class ProcessBehaviorTracker:
                                   alert_handler=None, alert_callback=None):
         """
         Build a ProcessEvent for a PID detected via correlator (not process scan).
-        Routes to the GUI Actions pane and alert log — without this the
+        Routes to the GUI Actions pane and alert log - without this the
         correlated_pids termination path leaves the Actions pane empty.
         """
         if pid in self._alerted_pids:
@@ -473,7 +473,7 @@ class ProcessBehaviorTracker:
         self._event_history.append(event)
         logger.warning(
             f"[PROCESS] Correlated PID {pid} ({event.process_name}) flagged "
-            f"via entropy correlation — reason={reason}"
+            f"via entropy correlation - reason={reason}"
         )
         try:
             if alert_callback:

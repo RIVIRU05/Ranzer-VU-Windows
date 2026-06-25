@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RANZER CLI — Windows
+RANZER CLI - Windows
 Usage:
   python -m ranzer.cli start --dirs C:\\Users\\you\\Documents
   python -m ranzer.cli status
@@ -73,7 +73,7 @@ def cmd_start(args):
     with open(PID_FILE, "w") as f:
         f.write(str(os.getpid()))
 
-    print(f"[*] RANZER started — monitoring: {', '.join(dirs)}")
+    print(f"[*] RANZER started - monitoring: {', '.join(dirs)}")
     print(f"[*] Entropy threshold : {args.threshold}")
     print(f"[*] Honey files       : {'enabled' if not args.no_honeyfiles else 'disabled'}")
     print(f"[*] Auto-terminate    : {'enabled' if args.auto_terminate else 'disabled'}")
@@ -172,7 +172,7 @@ def cmd_status(args):
               f"{counts['MEDIUM']} medium, {counts['LOW']} low)")
 
     except psutil.NoSuchProcess:
-        print(f"[!] PID {pid_str} not found — RANZER may have stopped unexpectedly.")
+        print(f"[!] PID {pid_str} not found - RANZER may have stopped unexpectedly.")
         _clear_state()
     except Exception as e:
         print(f"[!] Error reading process info: {e}")
@@ -229,7 +229,7 @@ def cmd_scan(args):
     with open(args.file, "rb") as f:
         data = f.read(10 * 1024 * 1024)
     entropy = calculate_shannon_entropy(data)
-    status = "HIGH ENTROPY — likely encrypted" if entropy > args.threshold else "Normal"
+    status = "HIGH ENTROPY - likely encrypted" if entropy > args.threshold else "Normal"
     print(f"File    : {args.file}")
     print(f"Entropy : {entropy:.4f} / 8.0")
     print(f"Status  : {status} (threshold: {args.threshold})")
@@ -274,7 +274,7 @@ def cmd_gui(args):
 
 def main():
     parser = argparse.ArgumentParser(prog="ranzer",
-                                     description="RANZER — Ransomware Analyzer EPS")
+                                     description="RANZER - Ransomware Analyzer EPS")
     sub = parser.add_subparsers(dest="command")
 
     p = sub.add_parser("start", help="Start monitoring")

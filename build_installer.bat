@@ -7,9 +7,9 @@ title Build RANZER Installer
 ::  Builds RANZER_Setup_1.0.0.exe for end-user distribution.
 ::
 ::  Prerequisites (developer machine):
-::    1. Inno Setup 6  — https://jrsoftware.org/isdl.php
-::    2. Python 3.10+  — https://www.python.org/downloads/
-::    3. PyInstaller   — pip install pyinstaller
+::    1. Inno Setup 6  - https://jrsoftware.org/isdl.php
+::    2. Python 3.10+  - https://www.python.org/downloads/
+::    3. PyInstaller   - pip install pyinstaller
 ::
 ::  Output:  build_output\installer\RANZER_Setup_1.0.0.exe
 :: ============================================================================

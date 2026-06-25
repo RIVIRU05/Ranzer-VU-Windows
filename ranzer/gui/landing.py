@@ -1,4 +1,4 @@
-"""RANZER GUI — Landing Page"""
+"""RANZER GUI - Landing Page"""
 
 import os
 import tkinter as tk
@@ -12,7 +12,7 @@ if getattr(_sys, "frozen", False):
 def _load_uni_logo(height: int = 32, bg: str = T.CARD):
     path = os.path.join(_HERE, "image.png")
 
-    # Try PIL first — best quality with transparency compositing
+    # Try PIL first - best quality with transparency compositing
     try:
         from PIL import Image, ImageTk
         img = Image.open(path).convert("RGBA")
@@ -27,7 +27,7 @@ def _load_uni_logo(height: int = 32, bg: str = T.CARD):
         import sys as _s
         print(f"[RANZER] PIL uni-logo load failed: {_e} | path={path}", file=_s.stderr)
 
-    # Fallback — load pre-sized composited PNG (no PIL, no scaling needed)
+    # Fallback - load pre-sized composited PNG (no PIL, no scaling needed)
     try:
         fallback = os.path.join(_HERE, "image_header.png")
         photo = tk.PhotoImage(file=fallback)
@@ -62,7 +62,7 @@ class LandingPage(tk.Toplevel):
         header.pack(fill="x")
         header.pack_propagate(False)
 
-        # Uni logo — right side, packed first so it claims the space before left items
+        # Uni logo - right side, packed first so it claims the space before left items
         uni_img = _load_uni_logo(height=40, bg=T.BLUE)
         if uni_img:
             uni_lbl = tk.Label(header, image=uni_img, bg=T.BLUE)
@@ -103,7 +103,7 @@ class LandingPage(tk.Toplevel):
                  bg=T.BG, fg=T.TEXT_MUTED, font=T.FONT_BODY).pack(pady=(4, 18))
 
         self._card(body,
-                   title="▶   Start  (default — honey files enabled)",
+                   title="▶   Start  (default - honey files enabled)",
                    subtitle="Begin monitoring with recommended settings",
                    command=self._start_default,
                    primary=True)

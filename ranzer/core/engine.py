@@ -59,11 +59,11 @@ class RanzerEngine:
         self.config.log_dir = log_dir
 
         log_path = setup_logging(level=logging.INFO, log_dir=log_dir)
-        logger.info(f"RANZER initialised — log: {log_path}")
+        logger.info(f"RANZER initialised - log: {log_path}")
         try:
             import ctypes
             if ctypes.windll.shell32.IsUserAnAdmin():
-                logger.warning("Running as Administrator — system processes are whitelisted")
+                logger.warning("Running as Administrator - system processes are whitelisted")
         except Exception:
             pass
 
@@ -126,7 +126,7 @@ class RanzerEngine:
             t.start()
             self._threads.append(t)
 
-        logger.info(f"RANZER active — watching {len(self.config.monitored_dirs)} directories.")
+        logger.info(f"RANZER active - watching {len(self.config.monitored_dirs)} directories.")
 
     def stop(self):
         if not self._running:
@@ -204,19 +204,19 @@ class RanzerEngine:
                     if pid in self.process_tracker._quarantined_pids:
                         continue
                     # Synthesise a ProcessEvent so the GUI Actions pane shows
-                    # this PID — the correlated_pids path otherwise skips it.
+                    # this PID - the correlated_pids path otherwise skips it.
                     self.process_tracker.synthesize_event_for_pid(
                         pid, "entropy_correlated_writer",
                         self.alert_handler, self.process_tracker.alert_callback
                     )
                     # synthesize callback chain may have already terminated the PID
-                    # via re-entrant _on_assessment — skip if quarantined
+                    # via re-entrant _on_assessment - skip if quarantined
                     if pid not in self.process_tracker._quarantined_pids:
                         if not self.process_tracker.terminate_process(pid):
                             self.process_tracker.kill_process(pid)
             elif self.config.monitored_dirs:
                 # Entropy pushed threat to CRITICAL but write rate was too low to
-                # identify the PID through normal scanning — do an emergency lookup
+                # identify the PID through normal scanning - do an emergency lookup
                 found = self.process_tracker.find_writers_targeting_dirs(
                     self.config.monitored_dirs
                 )
@@ -229,7 +229,7 @@ class RanzerEngine:
                     else:
                         self.alert_handler.handle_event(event)
                     # cb() may have already terminated this PID via re-entrant
-                    # _on_assessment — skip if already quarantined to avoid the
+                    # _on_assessment - skip if already quarantined to avoid the
                     # "process not found" error log.
                     if event.pid not in self.process_tracker._quarantined_pids:
                         if not self.process_tracker.terminate_process(event.pid):
@@ -240,7 +240,7 @@ class RanzerEngine:
             # signals from the previous run (which caused the stale-PID problem).
             if self.process_tracker._quarantined_pids != quarantined_before:
                 self.correlator.reset()
-                logger.info("[ENGINE] Correlator reset after termination — ready for next threat")
+                logger.info("[ENGINE] Correlator reset after termination - ready for next threat")
 
     def _on_rapid_write_pid(self, pid: int, name: str, rate: int, file_path: str):
         """Called by file watcher when a PID is caught writing files rapidly."""
@@ -263,19 +263,19 @@ class RanzerEngine:
         self.process_tracker.record_external_event(event)
 
         # Only auto-terminate if threat score is HIGH or CRITICAL
-        # (entropy must have also fired — rapid writes alone are not enough)
+        # (entropy must have also fired - rapid writes alone are not enough)
         if self.config.enable_auto_terminate:
             latest = self.correlator.get_latest_assessment()
             if latest and latest.threat_level in ("HIGH", "CRITICAL"):
                 logger.warning(
-                    f"[ENGINE] Auto-terminating PID {pid} ({name}) — "
+                    f"[ENGINE] Auto-terminating PID {pid} ({name}) - "
                     f"threat={latest.threat_level} score={latest.threat_score:.1f}"
                 )
                 if not self.process_tracker.terminate_process(pid):
                     self.process_tracker.kill_process(pid)
             else:
                 logger.info(
-                    f"[ENGINE] Rapid writes from PID {pid} ({name}) — "
+                    f"[ENGINE] Rapid writes from PID {pid} ({name}) - "
                     f"NOT terminating, entropy threshold not yet reached"
                 )
 

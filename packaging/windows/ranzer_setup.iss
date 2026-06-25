@@ -1,5 +1,5 @@
 ; =============================================================================
-;  RANZER — Inno Setup Installer Script
+;  RANZER - Inno Setup Installer Script
 ;  Produces:  RANZER_Setup_1.0.0.exe
 ;  Requires:  Inno Setup 6.x  (https://jrsoftware.org/isdl.php)
 ;             PyInstaller bundle already built by build_exe.bat

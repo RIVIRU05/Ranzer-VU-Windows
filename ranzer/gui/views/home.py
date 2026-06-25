@@ -1,4 +1,4 @@
-"""RANZER GUI — Home View"""
+"""RANZER GUI - Home View"""
 
 import tkinter as tk
 from ranzer.gui import theme as T

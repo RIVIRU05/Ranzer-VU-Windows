@@ -1,5 +1,5 @@
 """
-RANZER GUI — Entry point.
+RANZER GUI - Entry point.
 Launch with:  python3 -m ranzer.cli gui
 """
 
